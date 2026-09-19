@@ -23,6 +23,7 @@
 - [Prerequisites](#-prerequisites)
 - [Folder Structure](#-folder-structure)
 - [Scripts Reference](#-scripts-reference)
+- [Getting Started — Clone & Set Up](#-getting-started--clone--set-up)
 - [Step-by-Step Usage](#-step-by-step-usage)
 - [Output Files](#-output-files)
 - [Viewing Results](#-viewing-results)
@@ -106,7 +107,7 @@ This pipeline processes Illumina paired-end reads from Avian Orthoreovirus (ARV)
 
 ```bash
 conda env create -f environment.yml
-conda activate ARV
+conda activate arv_pipeline
 ```
 
 **Key tools included:**
@@ -131,10 +132,6 @@ arv_pipeline/
 ├── environment.yml                    # Conda environment
 │
 ├── ── REFERENCE DATA ────────────────────────────────────
-├── download_ref_arv.sh                # Download 10 ARV segments → combined FASTA
-├── download_sequence.sh               # Download paired-end FASTQ from SRA
-├── download_ref_chicken.sh            # Download Gallus gallus genome
-│
 ├── avian_reovirus.fa                  # ← ARV 10-segment reference (combined)
 ├── avian_reovirus.fa.fai              # samtools index
 ├── avian_reovirus.fa.{amb,ann,bwt…}  # BWA index files
@@ -142,14 +139,17 @@ arv_pipeline/
 ├── chicken_genome/
 │   └── GCA_000002315.3_genomic.fna   # Gallus gallus reference genome
 │
-├── ── PIPELINE SCRIPTS ──────────────────────────────────
-├── fastqc.sh                          # QC on raw reads
-├── cutadapt.sh                        # Trim adapters & low-quality bases
-├── fastqc_trimm.sh                    # QC on trimmed reads
-├── run_chicken_mapping.sh             # Host filtering (BWA → chicken)
-├── run_arv_mapping.sh                 # Viral mapping (BWA → ARV)
-├── vcf_calling.sh                     # Variant calling (bcftools)
-├── view_bam.sh                        # Interactive BAM viewer (tview)
+├── scripts/                           # ← ALL pipeline scripts live here
+│   ├── download_ref_arv.sh            #   Download 10 ARV segments → combined FASTA
+│   ├── download_sequence.sh           #   Download paired-end FASTQ from SRA
+│   ├── download_ref_chicken.sh        #   Download Gallus gallus genome
+│   ├── fastqc.sh                      #   QC on raw reads
+│   ├── cutadapt.sh                    #   Trim adapters & low-quality bases
+│   ├── fastqc_trimm.sh                #   QC on trimmed reads
+│   ├── run_chicken_mapping.sh         #   Host filtering (BWA → chicken)
+│   ├── run_arv_mapping.sh             #   Viral mapping (BWA → ARV)
+│   ├── vcf_calling.sh                 #   Variant calling (bcftools)
+│   └── view_bam.sh                    #   Interactive BAM viewer (tview)
 │
 ├── ── DATA DIRECTORIES ──────────────────────────────────
 ├── data/                              # Raw FASTQ input
@@ -170,7 +170,7 @@ arv_pipeline/
 Downloads all 10 ARV segments from NCBI and combines them into a single multi-FASTA.
 
 ```bash
-bash download_ref_arv.sh
+bash scripts/download_ref_arv.sh
 ```
 
 | Parameter | Value |
@@ -186,8 +186,8 @@ bash download_ref_arv.sh
 Downloads paired-end FASTQ from the SRA.
 
 ```bash
-bash download_sequence.sh            # downloads SRR12620879 by default
-bash download_sequence.sh SRR99999   # custom accession
+bash scripts/download_sequence.sh            # downloads SRR12620879 by default
+bash scripts/download_sequence.sh SRR99999   # custom accession
 ```
 
 | Parameter | Value |
@@ -384,9 +384,9 @@ bash scripts/vcf_calling.sh SRR12620879 avian_reovirus.fa arv_mapping_results/ v
 Opens an interactive terminal view of the alignment against the ARV reference.
 
 ```bash
-bash view_bam.sh
-bash view_bam.sh SRR12620879
-bash view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU169290:500
+bash scripts/view_bam.sh
+bash scripts/view_bam.sh SRR12620879
+bash scripts/view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU169290:500
 ```
 
 | Argument | Default | Description |
@@ -432,37 +432,37 @@ bash view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU169290:500
 ```bash
 # ── 1. Set up environment ─────────────────────────────────────────────────────
 conda env create -f environment.yml
-conda activate arv_pipeline
+conda activate ARV
 
 # ── 2. Download references (once only) ───────────────────────────────────────
-bash download_ref_arv.sh             # → avian_reovirus.fa
-bash download_ref_chicken.sh         # → chicken_genome/GCA_000002315.3_genomic.fna
+bash scripts/download_ref_arv.sh             # → avian_reovirus.fa
+bash scripts/download_ref_chicken.sh         # → chicken_genome/GCA_000002315.3_genomic.fna
 
 # ── 3. Download test sample ───────────────────────────────────────────────────
-bash download_sequence.sh SRR12620879   # → data/SRR12620879_1.fastq + _2.fastq
+bash scripts/download_sequence.sh SRR12620879   # → data/SRR12620879_1.fastq + _2.fastq
 
 # ── 4. Quality control (raw reads) ───────────────────────────────────────────
-bash fastqc.sh SRR12620879
+bash scripts/fastqc.sh SRR12620879
 
 # ── 5. Trim adapters ─────────────────────────────────────────────────────────
-bash cutadapt.sh SRR12620879
+bash scripts/cutadapt.sh SRR12620879
 
 # ── 6. Quality control (trimmed reads) ───────────────────────────────────────
-bash fastqc_trimm.sh SRR12620879
+bash scripts/fastqc_trimm.sh SRR12620879
 
 # ── 7. Host filtering [submit to HPC] ────────────────────────────────────────
-qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 run_chicken_mapping.sh
+qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 scripts/run_chicken_mapping.sh
 #  → monitor: qstat -u $USER
 #  → logs:    tail -f host_filter_results/bwa_host_filter.log
 
 # ── 8. ARV mapping ────────────────────────────────────────────────────────────
-bash run_arv_mapping.sh SRR12620879
+bash scripts/run_arv_mapping.sh SRR12620879
 
 # ── 9. Variant calling ────────────────────────────────────────────────────────
-bash vcf_calling.sh SRR12620879
+bash scripts/vcf_calling.sh SRR12620879
 
 # ── 10. View alignment ───────────────────────────────────────────────────────
-bash view_bam.sh SRR12620879
+bash scripts/view_bam.sh SRR12620879
 ```
 
 ---
@@ -512,10 +512,10 @@ bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%DP]\n' \
 
 ```bash
 # View from the start of segment L1
-bash view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU169288:1
+bash scripts/view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU169288:1
 
 # Jump directly to a specific position
-bash view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU169294:350
+bash scripts/view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU169294:350
 ```
 
 ### Direct samtools tview command
@@ -554,7 +554,7 @@ For a graphical view, load into IGV:
 
 ```bash
 # Host filtering (requires medium queue)
-qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 run_chicken_mapping.sh
+qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 scripts/run_chicken_mapping.sh
 
 # Monitor jobs
 qstat -u $USER
@@ -570,6 +570,63 @@ tail -f host_filter_results/bwa_host_filter.log
 - ASC uses **PBS Pro** with `run_script` wrapper. Use direct `qsub` with `-q medium` flags for reliable resource allocation.
 - The `small` queue is limited to **4 GB max** — insufficient for chicken genome BWA indexing.
 - Load required modules before running: `module load bwa samtools bcftools`
+
+---
+
+## 📥 Getting Started — Clone & Set Up
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/nneupane133/ARV_variant.git
+cd ARV_variant
+```
+
+> Replace `YOUR_USERNAME/arv-pipeline` with your actual GitHub repository path.
+
+### Set Up on the Alabama Supercomputer (ASC)
+
+```bash
+# 1. SSH into ASC
+ssh USERNAME@asaxlogin2.asc.edu
+
+# 2. Navigate to your scratch/project directory
+cd /scratch/YOUR_USERNAME/
+# or
+cd /home/YOUR_USERNAME/
+
+# 3. Clone the pipeline
+git clone https://github.com/YOUR_USERNAME/arv-pipeline.git
+cd arv-pipeline
+
+# 4. Make all scripts executable
+chmod +x *.sh
+
+# 5. Load required modules (ASC)
+module load anaconda3
+module load bwa
+module load samtools
+module load bcftools
+
+# 6. Create and activate the conda environment
+conda env create -f environment.yml
+conda activate arv_pipeline
+```
+
+### Push Your Own Changes Back
+
+```bash
+# After editing scripts or adding results
+git add .
+git commit -m "Add ARV pipeline scripts and results"
+git push origin main
+```
+
+### Keep Your Local Copy Up to Date
+
+```bash
+git pull origin main
+```
 
 ---
 
