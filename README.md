@@ -521,10 +521,7 @@ bash scripts/view_bam.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa KU16
 ### Direct samtools tview command
 
 ```bash
-samtools tview \
-    -p KU169288:1 \
-    arv_mapping_results/SRR12620879.sorted.bam \
-    avian_reovirus.fa
+samtools tview arv_mapping_results/SRR12620879.sorted.bam avian_reovirus.fa
 ```
 
 ### IGV (Integrative Genomics Viewer)
