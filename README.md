@@ -106,7 +106,7 @@ This pipeline processes Illumina paired-end reads from Avian Orthoreovirus (ARV)
 
 ```bash
 conda env create -f environment.yml
-conda activate arv_pipeline
+conda activate ARV
 ```
 
 **Key tools included:**
