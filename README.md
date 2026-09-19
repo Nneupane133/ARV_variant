@@ -39,7 +39,8 @@ This pipeline processes Illumina paired-end reads from Avian Orthoreovirus (ARV)
 2. **Adapter Trimming** — remove adapters & low-quality bases with Cutadapt
 3. **Host Filtering** — map reads to *Gallus gallus* genome; extract unmapped (viral) reads
 4. **Viral Mapping** — align host-depleted reads to the 10-segment ARV reference
-5. **Variant Calling** — call SNPs/indels with bcftools; filter by depth & quality
+5. **Mapping Visualization** — generate TXT & HTML QC reports from BAM files
+6. **Variant Calling** — call SNPs/indels with bcftools; filter by depth & quality
 
 > **Reference genome:** ARV S1133 strain · 10 segments · `KU169288`–`KU169297` · ~23,492 bp total  
 > **Host genome:** *Gallus gallus* `GCA_000002315.3` (Gallus_gallus-5.0)  
@@ -88,6 +89,17 @@ This pipeline processes Illumina paired-end reads from Avian Orthoreovirus (ARV)
          │
          ▼
   ┌─────────────────────┐
+  │  arv_mapping_viz.sh │  ─────────▶  📁 variant_results/
+  │  (samtools stats,   |              txt/ *.flagstat.txt
+  |   coverage,tview)   │              txt/ *.coverage_summary.txt
+  └──────┬──────────────┘              txt/ *.depth.txt
+         │                             txt/ *.pileup.txt
+         │                             txt/ *.tview.txt (per segment) 
+         │                             html/ *.tview.html (per segment)
+         │                              html/ *_summary_report.html  ◀──
+OPEN IN BROWSER
+         ▼
+  ┌─────────────────────┐
   │  vcf_calling.sh     │  ─────────▶  📁 variant_results/
   │  (bcftools)         │              *.raw.vcf
   └──────┬──────────────┘              *.filtered.vcf
@@ -107,7 +119,7 @@ This pipeline processes Illumina paired-end reads from Avian Orthoreovirus (ARV)
 
 ```bash
 conda env create -f environment.yml
-conda activate arv_pipeline
+conda activate ARV
 ```
 
 **Key tools included:**
@@ -127,7 +139,7 @@ conda activate arv_pipeline
 ## 📁 Folder Structure
 
 ```
-arv_pipeline/
+ARV_variant/
 │
 ├── environment.yml                    # Conda environment
 │
@@ -148,6 +160,7 @@ arv_pipeline/
 │   ├── fastqc_trimm.sh                #   QC on trimmed reads
 │   ├── run_chicken_mapping.sh         #   Host filtering (BWA → chicken)
 │   ├── run_arv_mapping.sh             #   Viral mapping (BWA → ARV)
+│   ├── arv_mapping_viz.sh             #   ★ BAM visualization → TXT & HTML reports
 │   ├── vcf_calling.sh                 #   Variant calling (bcftools)
 │   └── view_bam.sh                    #   Interactive BAM viewer (tview)
 │
@@ -158,6 +171,9 @@ arv_pipeline/
 ├── trimmed_fastqc_results/            # Trimmed read QC output
 ├── host_filter_results/               # Unmapped (viral) reads
 ├── arv_mapping_results/               # BAM files aligned to ARV
+├── arv_viz_results/                   # ★ Mapping visualization output
+│   ├── txt/                           #     Plain-text samtools reports
+│   └── html/                          #     HTML alignment views + summary report
 └── variant_results/                   # VCF files with variants
 ```
 
@@ -344,7 +360,58 @@ bash scripts/run_arv_mapping.sh SRR12620879 avian_reovirus.fa host_filter_result
 
 ---
 
-### 9 · `vcf_calling.sh` — Variant Calling
+
+### 9 · `arv_mapping_viz.sh` — Mapping Visualization ★ NEW
+
+Generates comprehensive TXT and HTML QC reports directly from the BAM files in `arv_mapping_results/`. Runs 8 samtools analyses and produces a browser-ready HTML summary dashboard per sample.
+
+```bash
+bash scripts/arv_mapping_viz.sh SRR12620879
+bash scripts/arv_mapping_viz.sh SRR12620879 arv_mapping_results/ avian_reovirus.fa arv_viz_results/
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `SAMPLE_ID` | *(required)* | SRA accession |
+| `BAM_DIR` | `arv_mapping_results/` | Directory with sorted BAM |
+| `REFERENCE` | `avian_reovirus.fa` | ARV reference FASTA |
+| `OUTPUT_DIR` | `arv_viz_results/` | Visualization output |
+
+**Analyses performed:**
+
+| Step | Tool | Description |
+|------|------|-------------|
+| 1 | `samtools flagstat` | Mapping rate, duplicates, properly paired % |
+| 2 | `samtools stats` | Full stats — Ts/Tv ratio, error rate, insert size |
+| 3 | `samtools coverage` | Per-segment mean depth, % covered, #covered bases |
+| 4 | `samtools depth -a` | Per-position read depth across all segments |
+| 5 | `samtools mpileup` | Base-level read stacks (variant calling input) |
+| 6 | `samtools tview -d T` | Text alignment view per ARV segment |
+| 7 | `samtools tview -d H` | HTML color-coded alignment view per segment |
+| 8 | HTML report builder | Combined dashboard with stats cards + all links |
+
+**Output:**
+
+```
+arv_viz_results/
+├── txt/
+│   ├── SRR12620879.raw_flagstat.txt          # Flag stats (raw BAM)
+│   ├── SRR12620879.sorted_flagstat.txt       # Flag stats (sorted BAM)
+│   ├── SRR12620879.stats.txt                 # Full alignment statistics
+│   ├── SRR12620879.coverage_summary.txt      # Per-segment coverage table
+│   ├── SRR12620879.depth.txt                 # Per-position depth (all sites)
+│   ├── SRR12620879.pileup.txt                # Base-level pileup
+│   └── SRR12620879.<SEGMENT>.tview.txt       # Text alignment per segment
+└── html/
+    ├── SRR12620879.<SEGMENT>.tview.html      # Color alignment per segment
+    └── SRR12620879_summary_report.html       # ← Open this in a browser
+```
+
+> 💡 **Open `SRR12620879_summary_report.html` in a browser** to view the interactive dashboard — it shows read count cards, per-segment coverage, full stats, and links to every segment's alignment view.
+
+---
+
+### 10 · `vcf_calling.sh` — Variant Calling
 
 Calls SNPs and indels using bcftools mpileup → call → filter pipeline.
 
@@ -377,11 +444,9 @@ bash scripts/vcf_calling.sh SRR12620879 avian_reovirus.fa arv_mapping_results/ v
 | `variant_results/SRR12620879.variants.vcf.gz` | bgzip-compressed VCF |
 | `variant_results/SRR12620879.variants.vcf.gz.tbi` | tabix index |
 
-
-
 ---
 
-### 10 · `view_bam.sh` — Interactive BAM Viewer
+### 11 · `view_bam.sh` — Interactive BAM Viewer
 
 Opens an interactive terminal view of the alignment against the ARV reference.
 
@@ -460,10 +525,16 @@ qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 scripts/run_chic
 # ── 8. ARV mapping ────────────────────────────────────────────────────────────
 bash scripts/run_arv_mapping.sh SRR12620879
 
-# ── 9. Variant calling ────────────────────────────────────────────────────────
+# ── 9. Mapping visualization [NEW] ───────────────────────────────────────────
+bash scripts/arv_mapping_viz.sh SRR12620879
+#  → open in browser: arv_viz_results/html/SRR12620879_summary_report.html
+#  → check coverage:  cat arv_viz_results/txt/SRR12620879.coverage_summary.txt
+#  → check flagstat:  cat arv_viz_results/txt/SRR12620879.sorted_flagstat.txt
+
+# ── 10. Variant calling ───────────────────────────────────────────────────────
 bash scripts/vcf_calling.sh SRR12620879
 
-# ── 10. View alignment ───────────────────────────────────────────────────────
+# ── 11. View alignment interactively ─────────────────────────────────────────
 bash scripts/view_bam.sh SRR12620879
 ```
 
@@ -473,20 +544,33 @@ bash scripts/view_bam.sh SRR12620879
 
 After a complete pipeline run, you will have:
 
+
 ```
 variant_results/
-├── SRR12620879.raw.vcf           ← all raw variants
-├── SRR12620879.filtered.vcf      ← high-confidence SNPs (depth≥10, QUAL≥20)
-├── SRR12620879.variants.vcf.gz   ← compressed, ready for downstream analysis
+├── SRR12620879.raw.vcf              ← all raw variants
+├── SRR12620879.filtered.vcf         ← high-confidence SNPs (depth≥10, QUAL≥20)
+├── SRR12620879.variants.vcf.gz      ← compressed, ready for downstream analysis
 └── SRR12620879.variants.vcf.gz.tbi  ← tabix index for random access
 
 arv_mapping_results/
-├── SRR12620879.sorted.bam        ← coordinate-sorted alignment to ARV
-└── SRR12620879.sorted.bam.bai   ← BAM index
+├── SRR12620879.sorted.bam           ← coordinate-sorted alignment to ARV
+└── SRR12620879.sorted.bam.bai       ← BAM index
+
+arv_viz_results/                     ← ★ NEW — mapping visualization
+├── txt/
+│   ├── SRR12620879.sorted_flagstat.txt     ← mapping rate, proper pairs
+│   ├── SRR12620879.stats.txt               ← full alignment stats
+│   ├── SRR12620879.coverage_summary.txt    ← per-segment depth & coverage
+│   ├── SRR12620879.depth.txt               ← per-position depth
+│   ├── SRR12620879.pileup.txt              ← base-level read stacks
+│   └── SRR12620879.<SEGMENT>.tview.txt     ← text alignment per segment
+└── html/
+    ├── SRR12620879.<SEGMENT>.tview.html    ← color alignment per segment
+    └── SRR12620879_summary_report.html     ← ★ OPEN IN BROWSER
 
 host_filter_results/
-├── SRR12620879_unmapped_1.fastq  ← viral R1 reads (chicken-depleted)
-└── SRR12620879_unmapped_2.fastq  ← viral R2 reads (chicken-depleted)
+├── SRR12620879_unmapped_1.fastq     ← viral R1 reads (chicken-depleted)
+└── SRR12620879_unmapped_2.fastq     ← viral R2 reads (chicken-depleted)
 ```
 
 ### Interpreting VCF Output
