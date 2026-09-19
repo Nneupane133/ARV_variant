@@ -1,0 +1,18 @@
+name: ARV
+
+channels:
+  - bioconda 
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python
+  - sra-tools
+  - fastqc=0.11.9
+  - multiqc=1.11
+  - cutadapt
+  - bwa
+  - samtools
+  - bcftools
+  - vcftools
+  - gffread
