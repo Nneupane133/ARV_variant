@@ -24,6 +24,9 @@
 
 set -euo pipefail
 
+# ── resolve project root ──────────────────────────────────────────────────────
+cd "$(dirname "$0")/.." || exit 1
+
 # ── arguments / defaults ──────────────────────────────────────────────────────
 SAMPLE_ID="${1:?Error: SAMPLE_ID is required. Usage: $0 <SAMPLE_ID> [REFERENCE] [BAM_DIR] [OUTPUT_DIR] [MIN_DEPTH] [MIN_QUAL]}"
 REFERENCE="${2:-avian_reovirus.fa}"
