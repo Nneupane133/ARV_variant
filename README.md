@@ -448,7 +448,7 @@ bash scripts/fastqc.sh SRR12620879
 bash scripts/cutadapt.sh SRR12620879
 
 # ── 6. Quality control (trimmed reads) ───────────────────────────────────────
-bash scripts/fastqc_trimm.sh SRR12620879
+bash scripts/fastqc_trimm.sh
 
 # ── 7. Host filtering [submit to HPC] ────────────────────────────────────────
 qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 scripts/run_chicken_mapping.sh
