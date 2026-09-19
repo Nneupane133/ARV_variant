@@ -33,6 +33,10 @@
 
 set -euo pipefail
 
+# ── resolve project root (works whether called as bash scripts/run_arv_mapping.sh
+#    from the project root or from any other location) ──────────────────────────
+cd "$(dirname "$0")/.." || exit 1
+
 # ── arguments / defaults ──────────────────────────────────────────────────────
 SAMPLE_ID="${1:?Error: SAMPLE_ID is required. Usage: $0 <SAMPLE_ID> [REFERENCE] [INPUT_DIR] [OUTPUT_DIR] [THREADS]}"
 REFERENCE="${2:-avian_reovirus.fa}"
