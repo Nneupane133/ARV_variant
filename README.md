@@ -203,7 +203,7 @@ bash download_sequence.sh SRR99999   # custom accession
 Downloads the *Gallus gallus* reference genome via NCBI Datasets API.
 
 ```bash
-bash download_ref_chicken.sh
+bash scripts/download_ref_chicken.sh
 ```
 
 | Parameter | Value |
@@ -220,8 +220,8 @@ bash download_ref_chicken.sh
 Runs FastQC on raw paired-end reads.
 
 ```bash
-bash fastqc.sh                        # uses defaults
-bash fastqc.sh SRR12620879 data/ fastqc_results/ 4
+bash scripts/fastqc.sh                        # uses defaults
+bash scripts/fastqc.sh SRR12620879 data/ fastqc_results/ 4
 ```
 
 | Argument | Default | Description |
@@ -238,8 +238,8 @@ bash fastqc.sh SRR12620879 data/ fastqc_results/ 4
 Trims Illumina adapters and low-quality bases with Cutadapt.
 
 ```bash
-bash cutadapt.sh                      # uses defaults
-bash cutadapt.sh SRR12620879 data/ trimmed_data/ 4
+bash scripts/cutadapt.sh                      # uses defaults
+bash scripts/cutadapt.sh SRR12620879 data/ trimmed_data/ 4
 ```
 
 | Argument | Default | Description |
@@ -264,8 +264,8 @@ bash cutadapt.sh SRR12620879 data/ trimmed_data/ 4
 FastQC on trimmed reads to confirm adapter removal.
 
 ```bash
-bash fastqc_trimm.sh                  # uses defaults
-bash fastqc_trimm.sh SRR12620879 trimmed_data/ trimmed_fastqc_results/
+bash scripts/fastqc_trimm.sh                  # uses defaults
+bash scripts/fastqc_trimm.sh SRR12620879 trimmed_data/ trimmed_fastqc_results/
 ```
 
 ---
@@ -275,8 +275,8 @@ bash fastqc_trimm.sh SRR12620879 trimmed_data/ trimmed_fastqc_results/
 **The critical decontamination step.** Maps trimmed reads to the chicken genome; extracts the pairs where **both reads are unmapped** (your viral reads).
 
 ```bash
-bash run_chicken_mapping.sh SRR12620879
-bash run_chicken_mapping.sh SRR12620879 chicken_genome/GCA_000002315.3_genomic.fna trimmed_data/ host_filter_results/ 8
+bash scripts/run_chicken_mapping.sh SRR12620879
+bash scripts/run_chicken_mapping.sh SRR12620879 chicken_genome/GCA_000002315.3_genomic.fna trimmed_data/ host_filter_results/ 8
 ```
 
 | Argument | Default | Description |
@@ -304,7 +304,7 @@ bash run_chicken_mapping.sh SRR12620879 chicken_genome/GCA_000002315.3_genomic.f
 
 > **🖥️ ASC submission** (chicken genome BWA index requires ~16 GB RAM):
 > ```bash
-> qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 run_chicken_mapping.sh
+> qsub -q medium -l select=1:ncpus=8:mem=16gb -l walltime=6:00:00 scripts/run_chicken_mapping.sh
 > ```
 
 ---
@@ -314,8 +314,8 @@ bash run_chicken_mapping.sh SRR12620879 chicken_genome/GCA_000002315.3_genomic.f
 Aligns host-filtered viral reads to the 10-segment ARV reference.
 
 ```bash
-bash run_arv_mapping.sh SRR12620879
-bash run_arv_mapping.sh SRR12620879 avian_reovirus.fa host_filter_results/ arv_mapping_results/ 4
+bash scripts/run_arv_mapping.sh SRR12620879
+bash scripts/run_arv_mapping.sh SRR12620879 avian_reovirus.fa host_filter_results/ arv_mapping_results/ 4
 ```
 
 | Argument | Default | Description |
@@ -349,8 +349,8 @@ bash run_arv_mapping.sh SRR12620879 avian_reovirus.fa host_filter_results/ arv_m
 Calls SNPs and indels using bcftools mpileup → call → filter pipeline.
 
 ```bash
-bash vcf_calling.sh SRR12620879
-bash vcf_calling.sh SRR12620879 avian_reovirus.fa arv_mapping_results/ variant_results/ 4
+bash scripts/vcf_calling.sh SRR12620879
+bash scripts/vcf_calling.sh SRR12620879 avian_reovirus.fa arv_mapping_results/ variant_results/ 4
 ```
 
 | Argument | Default | Description |
