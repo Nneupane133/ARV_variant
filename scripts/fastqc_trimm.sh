@@ -16,6 +16,9 @@
 
 set -euo pipefail
 
+# ── resolve project root ──────────────────────────────────────────────────────
+cd "$(dirname "$0")/.." || exit 1
+
 # ── defaults (mirror Python __main__ block) ───────────────────────────────────
 INPUT_DIR="${1:-trimmed_data}"
 OUTPUT_DIR="${2:-trimmed_fastqc_results}"
