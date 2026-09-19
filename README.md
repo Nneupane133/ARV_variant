@@ -377,6 +377,8 @@ bash scripts/vcf_calling.sh SRR12620879 avian_reovirus.fa arv_mapping_results/ v
 | `variant_results/SRR12620879.variants.vcf.gz` | bgzip-compressed VCF |
 | `variant_results/SRR12620879.variants.vcf.gz.tbi` | tabix index |
 
+
+
 ---
 
 ### 10 · `view_bam.sh` — Interactive BAM Viewer
@@ -502,6 +504,28 @@ grep "KU169294" variant_results/SRR12620879.filtered.vcf
 # Check coverage depth at variant sites
 bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%DP]\n' \
     variant_results/SRR12620879.filtered.vcf
+
+# Quick summary (SNP vs indels)
+bcftools stats variant_results/SRR12620879.filtered.vcf | grep "^SN"
+
+# Visualization in R
+r
+   library(vcfR)
+   library(ggplot2)
+
+   # Load VCF
+   vcf <- read.vcfR("variant_results/SRR12620879.vcf")
+
+   # Basic summary
+   summary(vcf)
+
+   # Extract genotype info
+   dp <- extract.gt(vcf, element = "DP", as.numeric = TRUE)
+   af <- extract.gt(vcf, element = "AF", as.numeric = TRUE)
+
+   # Plot allele frequency distribution
+   hist(af, breaks = 50, main = "Allele Frequency Distribution",
+        xlab = "Allele Frequency", col = "steelblue")
 ```
 
 ---
